@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource} vscode-webview:;">
+    <title>LMP Actions</title>
+    <style>
+        body {
+            padding: 16px;
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--vscode-editor-foreground);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 8px;
+        }
+
+        label {
+            font-weight: 500;
+            margin-bottom: 4px;
+            display: block;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--vscode-input-border);
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+            transition: border-color 0.2s ease;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+            box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+        }
+
+        input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--vscode-input-border);
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            transition: border-color 0.2s ease;
+        }
+
+        .directory-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .directory-row input {
+            flex-grow: 1;
+        }
+
+        button {
+            padding: 8px 14px;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        #extractButton {
+            margin-top: 8px;
+            padding: 10px 16px;
+            font-weight: 600;
+            align-self: flex-start;
+        }
+
+        .file-tree {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--vscode-panel-border);
+            background-color: var(--vscode-editor-background);
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-tree ul {
+            list-style-type: none;
+            padding-left: 20px;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .file-tree>ul {
+            padding-left: 5px;
+        }
+
+        #absoluteOutputDir {
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-descriptionForeground);
+            font-family: var(--vscode-editor-font-family);
+            font-size: 0.9em;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--vscode-scrollbarSlider-background);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--vscode-scrollbarSlider-hoverBackground);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--vscode-scrollbarSlider-activeBackground);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+            pointer-events: none;
+            box-shadow: none;
+            text-shadow: none;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h3>LMP Actions</h3>
+
+        <label for="textContent">Paste file content:</label>
+        <textarea id="textContent" placeholder="Paste your file content here..."></textarea>
+
+        <label>LMP content:</label>
+        <div class="file-tree" id="fileTree">
+            <ul id="fileTreeList"></ul>
+        </div>
+
+        <label>To:</label>
+        <div class="directory-row">
+            <input type="text" id="outputDir" placeholder="Output directory..." />
+            <button id="browseButton">Browse</button>
+        </div>
+
+        <label>Final path:</label>
+        <div>
+            <input id="absoluteOutputDir" readonly>
+        </div>
+        <button id="extractButton" disabled>Extract Files</button>
+    </div>
+
+
+    <script>
+        (function () {
+            const vscode = acquireVsCodeApi();
+
+            const textContentEl = document.getElementById('textContent');
+            const outputDirEl = document.getElementById('outputDir');
+            const absoluteOutputDirEl = document.getElementById('absoluteOutputDir');
+            const browseButtonEl = document.getElementById('browseButton');
+            const extractButtonEl = document.getElementById('extractButton');
+            const fileTreeListEl = document.getElementById('fileTreeList');
+
+            browseButtonEl.addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'selectDirectory'
+                });
+            });
+
+            extractButtonEl.addEventListener('click', () => {
+                const textContent = textContentEl.value;
+                const outputDir = outputDirEl.value;
+
+                if (!textContent) {
+                    vscode.postMessage({
+                        command: 'showError',
+                        message: "Please enter some text content"
+                    });
+                    return;
+                }
+
+                if (!outputDir) {
+                    vscode.postMessage({
+                        command: 'showError',
+                        message: "Please select an output directory"
+                    });
+                    return;
+                }
+
+                vscode.postMessage({
+                    command: 'extract',
+                    textContent: textContent,
+                    outputDir: outputDir
+                });
+            });
+
+            outputDirEl.addEventListener('input', () => {
+                resolveOutputDir(outputDirEl.value);
+            });
+
+            textContentEl.addEventListener('input', updateFileTree);
+
+            function resolveOutputDir(outputPath) {
+                vscode.postMessage({
+                    command: 'resolveOutputDir',
+                    outputDir: outputPath
+                });
+            }
+
+            function updateFileTree() {
+                const text = textContentEl.value;
+                fileTreeListEl.innerHTML = '';
+
+                const fileRegex = /\[FILE_START: (.+?)\]/g;
+                let match;
+                let files = [];
+
+                while ((match = fileRegex.exec(text)) !== null) {
+                    files.push(match[1]);
+                }
+
+                if (files.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = 'No files detected';
+                    fileTreeListEl.appendChild(li);
+                    return;
+                }
+
+                const tree = {};
+                for (const file of files) {
+                    const parts = file.split('/');
+                    let current = tree;
+
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i];
+                        if (i === parts.length - 1) {
+                            current[part] = null;
+                        } else {
+                            if (!current[part]) {
+                                current[part] = {};
+                            }
+                            current = current[part];
+                        }
+                    }
+                }
+
+                renderTree(tree, fileTreeListEl);
+            }
+
+            function renderTree(node, parentElement) {
+                for (const key in node) {
+                    const li = document.createElement('li');
+                    if (node[key] === null) {
+                        li.textContent = key;
+                    } else {
+                        li.textContent = key + '/';
+                        const ul = document.createElement('ul');
+                        renderTree(node[key], ul);
+                        li.appendChild(ul);
+                    }
+                    parentElement.appendChild(li);
+                }
+            }
+
+            window.addEventListener('message', event => {
+                const message = event.data;
+                switch (message.type) {
+                    case 'directorySelected':
+                        outputDirEl.value = message.directory;
+                        absoluteOutputDirEl.value = message.directory;
+                        extractButtonEl.disabled = false;
+                        break;
+                    case 'resolvedOutputDir':
+                        if (!message.directory) {
+                            absoluteOutputDirEl.value = '';
+                            extractButtonEl.disabled = true;
+                        } else {
+                            absoluteOutputDirEl.value = message.directory;
+                            extractButtonEl.disabled = false;
+                        }
+                        break;
+                    case 'requestExtract':
+                        extractButtonEl.click();
+                        break;
+                }
+            });
+
+            updateFileTree();
+        })();
+    </script>
+</body>
+
+</html>
