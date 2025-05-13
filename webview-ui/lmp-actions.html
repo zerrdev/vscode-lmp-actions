@@ -161,6 +161,55 @@
             text-shadow: none;
             user-select: none;
         }
+
+        /* Tree view styling */
+        .tree-folder {
+            font-weight: 500;
+            color: var(--vscode-symbolIcon-folderForeground, #c09553);
+        }
+
+        .tree-file {
+            color: var(--vscode-symbolIcon-fileForeground, #75beff);
+        }
+
+        .tree-icon {
+            margin-right: 5px;
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+        }
+
+        .tree-caret {
+            cursor: pointer;
+            user-select: none;
+            margin-right: 5px;
+        }
+
+        .tree-caret::before {
+            content: "▶";
+            color: var(--vscode-foreground);
+            display: inline-block;
+            font-size: 10px;
+            transform: translateY(-1px);
+        }
+
+        .tree-caret-down::before {
+            content: "▼";
+        }
+
+        .nested {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        .file-count {
+            color: var(--vscode-descriptionForeground);
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
     </style>
 </head>
 
@@ -171,7 +220,7 @@
         <label for="textContent">Paste file content:</label>
         <textarea id="textContent" placeholder="Paste your file content here..."></textarea>
 
-        <label>LMP content:</label>
+        <label>LMP content: <span id="fileCount" class="file-count"></span></label>
         <div class="file-tree" id="fileTree">
             <ul id="fileTreeList"></ul>
         </div>
@@ -200,6 +249,7 @@
             const browseButtonEl = document.getElementById('browseButton');
             const extractButtonEl = document.getElementById('extractButton');
             const fileTreeListEl = document.getElementById('fileTreeList');
+            const fileCountEl = document.getElementById('fileCount');
 
             browseButtonEl.addEventListener('click', () => {
                 vscode.postMessage({
@@ -238,7 +288,9 @@
                 resolveOutputDir(outputDirEl.value);
             });
 
-            textContentEl.addEventListener('input', updateFileTree);
+            textContentEl.addEventListener('input', () => {
+                updateFileTree(textContentEl.value);
+            });
 
             function resolveOutputDir(outputPath) {
                 vscode.postMessage({
@@ -247,8 +299,7 @@
                 });
             }
 
-            function updateFileTree() {
-                const text = textContentEl.value;
+            function updateFileTree(text) {
                 fileTreeListEl.innerHTML = '';
 
                 const fileRegex = /\[FILE_START: (.+?)\]/g;
@@ -259,6 +310,9 @@
                     files.push(match[1]);
                 }
 
+                // Update file count
+                fileCountEl.textContent = files.length > 0 ? `(${files.length} files)` : '(No files)';
+
                 if (files.length === 0) {
                     const li = document.createElement('li');
                     li.textContent = 'No files detected';
@@ -266,6 +320,15 @@
                     return;
                 }
 
+                // Build tree structure
+                const tree = buildTreeStructure(files);
+                renderTreeView(tree, fileTreeListEl);
+
+                // Add event listeners to carets
+                setupTreeInteractions();
+            }
+
+            function buildTreeStructure(files) {
                 const tree = {};
                 for (const file of files) {
                     const parts = file.split('/');
@@ -274,31 +337,75 @@
                     for (let i = 0; i < parts.length; i++) {
                         const part = parts[i];
                         if (i === parts.length - 1) {
-                            current[part] = null;
+                            // It's a file
+                            current[part] = { type: 'file', name: part };
                         } else {
+                            // It's a directory
                             if (!current[part]) {
-                                current[part] = {};
+                                current[part] = { type: 'folder', name: part, children: {} };
                             }
-                            current = current[part];
+                            current = current[part].children;
                         }
                     }
                 }
-
-                renderTree(tree, fileTreeListEl);
+                return tree;
             }
 
-            function renderTree(node, parentElement) {
-                for (const key in node) {
+            function renderTreeView(node, parentElement) {
+                // Sort entries: folders first, then files, both alphabetically
+                const entries = Object.entries(node).sort((a, b) => {
+                    const aIsFolder = a[1].type === 'folder';
+                    const bIsFolder = b[1].type === 'folder';
+                    
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                    return a[0].localeCompare(b[0]);
+                });
+
+                for (const [key, value] of entries) {
                     const li = document.createElement('li');
-                    if (node[key] === null) {
-                        li.textContent = key;
-                    } else {
-                        li.textContent = key + '/';
+                    
+                    if (value.type === 'folder') {
+                        const span = document.createElement('span');
+                        span.className = 'tree-caret';
+                        li.appendChild(span);
+                        
+                        const folderIcon = document.createElement('span');
+                        folderIcon.className = 'tree-icon tree-folder';
+                        folderIcon.textContent = '📁';
+                        li.appendChild(folderIcon);
+                        
+                        const text = document.createTextNode(value.name);
+                        li.appendChild(text);
+                        
                         const ul = document.createElement('ul');
-                        renderTree(node[key], ul);
+                        ul.className = 'nested';
+                        renderTreeView(value.children, ul);
                         li.appendChild(ul);
+                    } else {
+                        const fileIcon = document.createElement('span');
+                        fileIcon.className = 'tree-icon tree-file';
+                        fileIcon.textContent = '📄';
+                        li.appendChild(fileIcon);
+                        
+                        const text = document.createTextNode(value.name);
+                        li.appendChild(text);
                     }
+                    
                     parentElement.appendChild(li);
+                }
+            }
+
+            function setupTreeInteractions() {
+                const carets = document.getElementsByClassName('tree-caret');
+                for (let i = 0; i < carets.length; i++) {
+                    carets[i].addEventListener('click', function() {
+                        this.classList.toggle('tree-caret-down');
+                        const nested = this.parentElement.querySelector('.nested');
+                        if (nested) {
+                            nested.classList.toggle('active');
+                        }
+                    });
                 }
             }
 
@@ -322,10 +429,18 @@
                     case 'requestExtract':
                         extractButtonEl.click();
                         break;
+                    case 'updateFileTree':
+                        if (message.content) {
+                            updateFileTree(message.content);
+                        } else {
+                            updateFileTree(textContentEl.value);
+                        }
+                        break;
                 }
             });
 
-            updateFileTree();
+            // Initialize tree view
+            updateFileTree(textContentEl.value);
         })();
     </script>
 </body>

@@ -35,6 +35,11 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
             try {
               await this.extractFilesImplementation(data.textContent, data.outputDir);
               vscode.window.showInformationMessage(`Files extracted to ${data.outputDir}`);
+              // Update the tree view after extraction
+              webviewView.webview.postMessage({
+                type: 'updateFileTree',
+                content: data.textContent
+              });
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error);
               vscode.window.showErrorMessage(`Error extracting files: ${errorMessage}`);
@@ -67,6 +72,14 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
           webviewView.webview.postMessage({
             type: 'resolvedOutputDir',
             directory: parsedPath
+          });
+          break;
+        }
+        case 'refreshTree': {
+          // Handle tree refresh requests
+          webviewView.webview.postMessage({
+            type: 'updateFileTree',
+            content: data.content
           });
           break;
         }
