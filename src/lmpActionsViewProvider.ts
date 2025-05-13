@@ -28,6 +28,15 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     };
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
+    // Initialize with default workspace path
+    const defaultOutputDir = this.getDefaultWorkspacePath();
+    if (defaultOutputDir) {
+      webviewView.webview.postMessage({
+        type: 'initializeOutputDir',
+        directory: defaultOutputDir
+      });
+    }
+
     webviewView.webview.onDidReceiveMessage(async (data) => {
       switch (data.command) {
         case 'extract':
@@ -38,7 +47,8 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
               // Update the tree view after extraction
               webviewView.webview.postMessage({
                 type: 'updateFileTree',
-                content: data.textContent
+                content: data.textContent,
+                outputDir: data.outputDir
               });
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error);
@@ -79,12 +89,21 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
           // Handle tree refresh requests
           webviewView.webview.postMessage({
             type: 'updateFileTree',
-            content: data.content
+            content: data.content,
+            outputDir: data.outputDir
           });
           break;
         }
       }
     });
+  }
+
+  private getDefaultWorkspacePath(): string | null {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      return null;
+    }
+    return workspaceFolders[0].uri.fsPath;
   }
 
   private parsePath(inputPath: string): string | null {

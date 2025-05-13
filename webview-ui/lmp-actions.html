@@ -210,6 +210,14 @@
             font-size: 0.85em;
             margin-left: 5px;
         }
+
+        .tree-root {
+            font-weight: bold;
+            color: var(--vscode-symbolIcon-folderForeground, #c09553);
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted var(--vscode-panel-border);
+        }
     </style>
 </head>
 
@@ -222,6 +230,7 @@
 
         <label>LMP content: <span id="fileCount" class="file-count"></span></label>
         <div class="file-tree" id="fileTree">
+            <div id="treeRoot" class="tree-root"></div>
             <ul id="fileTreeList"></ul>
         </div>
 
@@ -250,6 +259,9 @@
             const extractButtonEl = document.getElementById('extractButton');
             const fileTreeListEl = document.getElementById('fileTreeList');
             const fileCountEl = document.getElementById('fileCount');
+            const treeRootEl = document.getElementById('treeRoot');
+
+            let currentOutputDir = '';
 
             browseButtonEl.addEventListener('click', () => {
                 vscode.postMessage({
@@ -313,6 +325,9 @@
                 // Update file count
                 fileCountEl.textContent = files.length > 0 ? `(${files.length} files)` : '(No files)';
 
+                // Update tree root to show output directory
+                updateTreeRoot();
+
                 if (files.length === 0) {
                     const li = document.createElement('li');
                     li.textContent = 'No files detected';
@@ -326,6 +341,21 @@
 
                 // Add event listeners to carets
                 setupTreeInteractions();
+            }
+
+            function updateTreeRoot() {
+                if (currentOutputDir) {
+                    const folderIcon = document.createElement('span');
+                    folderIcon.className = 'tree-icon tree-folder';
+                    folderIcon.textContent = '📁';
+                    
+                    treeRootEl.innerHTML = '';
+                    treeRootEl.appendChild(folderIcon);
+                    treeRootEl.appendChild(document.createTextNode(currentOutputDir));
+                    treeRootEl.style.display = 'block';
+                } else {
+                    treeRootEl.style.display = 'none';
+                }
             }
 
             function buildTreeStructure(files) {
@@ -415,6 +445,8 @@
                     case 'directorySelected':
                         outputDirEl.value = message.directory;
                         absoluteOutputDirEl.value = message.directory;
+                        currentOutputDir = message.directory;
+                        updateTreeRoot();
                         extractButtonEl.disabled = false;
                         break;
                     case 'resolvedOutputDir':
@@ -423,6 +455,8 @@
                             extractButtonEl.disabled = true;
                         } else {
                             absoluteOutputDirEl.value = message.directory;
+                            currentOutputDir = message.directory;
+                            updateTreeRoot();
                             extractButtonEl.disabled = false;
                         }
                         break;
@@ -431,9 +465,21 @@
                         break;
                     case 'updateFileTree':
                         if (message.content) {
+                            if (message.outputDir) {
+                                currentOutputDir = message.outputDir;
+                            }
                             updateFileTree(message.content);
                         } else {
                             updateFileTree(textContentEl.value);
+                        }
+                        break;
+                    case 'initializeOutputDir':
+                        if (message.directory) {
+                            outputDirEl.value = message.directory;
+                            absoluteOutputDirEl.value = message.directory;
+                            currentOutputDir = message.directory;
+                            updateTreeRoot();
+                            extractButtonEl.disabled = false;
                         }
                         break;
                 }
