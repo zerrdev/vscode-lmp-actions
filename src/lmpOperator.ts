@@ -92,6 +92,26 @@ export class LmpOperator {
     return lmpContent;
   }
 
+  async copyFileAsLmp(filePath: string): Promise<string> {
+    if (!await fs.pathExists(filePath)) {
+      throw new Error(`File does not exist: ${filePath}`);
+    }
+    
+    try {
+      const content = await fs.readFile(filePath, 'utf8');
+      const fileName = path.basename(filePath);
+      let lmpContent = `[FILE_START: ${fileName}]\n`;
+      lmpContent += content;
+      if (!content.endsWith('\n')) {
+        lmpContent += '\n';
+      }
+      lmpContent += `[FILE_END: ${fileName}]\n\n`;
+      return lmpContent;
+    } catch (error) {
+      throw new Error(`Error reading file: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   private async getAllFiles(
     dir: string,
     options: {

@@ -138,6 +138,10 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
+  public async fileAsLMP(uri: string): Promise<string> {
+    return await this.lmpOperator.copyFileAsLmp(uri);
+  }
+
   private _getHtmlForWebview(webview: vscode.Webview): string {
     const extensionPath = this.context.extensionPath;
     const htmlPath = vscode.Uri.file(path.join(extensionPath, 'webview-ui', 'lmp-actions.html'));
