@@ -218,6 +218,19 @@
             padding-bottom: 5px;
             border-bottom: 1px dotted var(--vscode-panel-border);
         }
+        
+        .file-item {
+            cursor: pointer;
+        }
+        
+        .file-item:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        
+        .file-item.selected {
+            background-color: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+        }
     </style>
 </head>
 
@@ -262,6 +275,7 @@
             const treeRootEl = document.getElementById('treeRoot');
 
             let currentOutputDir = '';
+            let fileContents = {}; // Store file contents for preview
 
             browseButtonEl.addEventListener('click', () => {
                 vscode.postMessage({
@@ -313,6 +327,7 @@
 
             function updateFileTree(text) {
                 fileTreeListEl.innerHTML = '';
+                fileContents = {}; // Reset file contents
 
                 // Find all complete file entries (with both opening and closing tags)
                 const files = findCompleteFileEntries(text);
@@ -343,6 +358,7 @@
                 const files = [];
                 let isReadingFile = false;
                 let currentFilePath = '';
+                let currentContent = '';
                 
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
@@ -350,12 +366,16 @@
                     if (!isReadingFile && line.match(/^\[FILE_START: .+\]$/)) {
                         isReadingFile = true;
                         currentFilePath = line.replace(/^\[FILE_START: (.+)\]$/, '$1').trim();
+                        currentContent = '';
                     } else if (isReadingFile && line.match(/^\[FILE_END: .+\]$/)) {
                         const foundFilePath = line.replace(/^\[FILE_END: (.+)\]$/, '$1').trim();
                         if (currentFilePath === foundFilePath) {
                             files.push(currentFilePath);
+                            fileContents[currentFilePath] = currentContent;
                             isReadingFile = false;
                         }
+                    } else if (isReadingFile) {
+                        currentContent += line + '\n';
                     }
                 }
                 
@@ -387,7 +407,7 @@
                         const part = parts[i];
                         if (i === parts.length - 1) {
                             // It's a file
-                            current[part] = { type: 'file', name: part };
+                            current[part] = { type: 'file', name: part, path: file };
                         } else {
                             // It's a directory
                             if (!current[part]) {
@@ -432,6 +452,9 @@
                         renderTreeView(value.children, ul);
                         li.appendChild(ul);
                     } else {
+                        li.className = 'file-item';
+                        li.dataset.path = value.path;
+                        
                         const fileIcon = document.createElement('span');
                         fileIcon.className = 'tree-icon tree-file';
                         fileIcon.textContent = '📄';
@@ -439,6 +462,28 @@
                         
                         const text = document.createTextNode(value.name);
                         li.appendChild(text);
+                        
+                        // Add click event to preview file
+                        li.addEventListener('click', function() {
+                            // Remove selected class from all file items
+                            document.querySelectorAll('.file-item.selected').forEach(el => {
+                                el.classList.remove('selected');
+                            });
+                            
+                            // Add selected class to this file item
+                            this.classList.add('selected');
+                            
+                            const filePath = this.dataset.path;
+                            const content = fileContents[filePath];
+                            
+                            if (content) {
+                                vscode.postMessage({
+                                    command: 'previewFile',
+                                    filePath: filePath,
+                                    content: content
+                                });
+                            }
+                        });
                     }
                     
                     parentElement.appendChild(li);

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import os from 'os';
 import { LmpOperator } from './lmpOperator';
 
 export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
@@ -94,8 +95,31 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
           });
           break;
         }
+        case 'previewFile': {
+          // Handle file preview request
+          if (data.filePath && data.content) {
+            await this.showFilePreview(data.filePath, data.content);
+          }
+          break;
+        }
       }
     });
+  }
+
+  private async showFilePreview(filePath: string, content: string): Promise<void> {
+    // Create a temporary file in the system's temp directory
+    const tempFile = path.join(os.tmpdir(), `lmp-preview-${path.basename(filePath)}`);
+    await fs.promises.writeFile(tempFile, content, 'utf8');
+    
+    // Open the file in the editor
+    const document = await vscode.workspace.openTextDocument(tempFile);
+    await vscode.window.showTextDocument(document, { preview: true });
+    
+    // Set the document language based on file extension
+    const extension = path.extname(filePath).substring(1);
+    if (extension) {
+      vscode.languages.setTextDocumentLanguage(document, extension);
+    }
   }
 
   private getDefaultWorkspacePath(): string | null {
