@@ -146,7 +146,7 @@ export function activate(context: vscode.ExtensionContext): void {
 function formatLmpWithInstructions(lmpContent: string, instruction: string): string {
   const config = vscode.workspace.getConfiguration('lmpActions');
   const editInstruction = config.get<string>('editInstruction') || 
-    "Update this project with minimal modifications on pre existent code.\nSend me only modified files, without gaps or unchanged files.";
+    "Update this project with minimal modifications to the existing code.\nAlways return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\nOnly send the files that were actually modified.";
   
   const standardInstructions = `Follow these instructions **exactly and without deviation**:
 * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
