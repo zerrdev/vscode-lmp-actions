@@ -111,7 +111,27 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     const tempFile = path.join(os.tmpdir(), `lmp-preview-${path.basename(filePath)}`);
     await fs.promises.writeFile(tempFile, content, 'utf8');
     
-    // Open the file in the editor
+    // Check if a file with the same path exists in the workspace
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      const workspaceRoot = workspaceFolders[0].uri.fsPath;
+      const workspaceFilePath = path.join(workspaceRoot, filePath);
+      
+      if (await this.fileExists(workspaceFilePath)) {
+        // If file exists in workspace, open a diff view
+        const workspaceFileUri = vscode.Uri.file(workspaceFilePath);
+        const tempFileUri = vscode.Uri.file(tempFile);
+        
+        await vscode.commands.executeCommand('vscode.diff', 
+          workspaceFileUri, 
+          tempFileUri, 
+          `${path.basename(filePath)} (Workspace ↔ Preview)`
+        );
+        return;
+      }
+    }
+    
+    // If no matching file in workspace, just open the preview
     const document = await vscode.workspace.openTextDocument(tempFile);
     await vscode.window.showTextDocument(document, { preview: true });
     
@@ -119,6 +139,15 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     const extension = path.extname(filePath).substring(1);
     if (extension) {
       vscode.languages.setTextDocumentLanguage(document, extension);
+    }
+  }
+
+  private async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.promises.access(filePath, fs.constants.F_OK);
+      return true;
+    } catch {
+      return false;
     }
   }
 
