@@ -15,7 +15,6 @@
   "activationEvents": [
     "onCommand:lmpActions.extract",
     "onCommand:lmpActions.copyAsLMP",
-    "onCommand:lmpActions.copyMultipleAsLMP",
     "onView:lmpActionsView"
   ],
   "main": "./out/extension.js",
@@ -93,22 +92,12 @@
       {
         "command": "lmpActions.copyAsLMP",
         "title": "Copy as LMP"
-      },
-      {
-        "command": "lmpActions.copyMultipleAsLMP",
-        "title": "Copy as LMP (Multiple)"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "lmpActions.copyAsLMP",
-          "when": "explorerResourceIsFolder || explorerResourceIsFile",
-          "group": "navigation"
-        },
-        {
-          "command": "lmpActions.copyMultipleAsLMP",
-          "when": "selectedExplorerItems.length > 1",
           "group": "navigation"
         }
       ]
