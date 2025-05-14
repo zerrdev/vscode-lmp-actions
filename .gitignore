@@ -28,5 +28,8 @@ coverage/
 *.js.map
 
 # Optional: ignore package-lock.json or yarn.lock if you don’t want to lock dependencies
-# package-lock.json
-# yarn.lock
+package-lock.json
+yarn.lock
+
+# Packaged
+*.vsix
