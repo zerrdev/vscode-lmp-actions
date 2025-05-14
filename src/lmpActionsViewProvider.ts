@@ -127,19 +127,20 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     this._view.webview.postMessage({ type: 'requestExtract' });
   }
 
-  public async folderAsLMP(uri: string): Promise<string> {
+  public async folderAsLMP(uri: string, options: { relativeTo?: string } = {}): Promise<string> {
     const config = vscode.workspace.getConfiguration('lmpActions');
     const configExcludePatterns = config.get<string[]>('excludePatterns') || [];
     const configExcludeExtensions = config.get<string[]>('excludeExtensions') || [];
     const patternRegexps = configExcludePatterns.map(pattern => new RegExp(pattern));
     return await this.lmpOperator.copyFolderAsLmp(uri, {
       excludeExtensions: configExcludeExtensions,
-      excludePatterns: patternRegexps
+      excludePatterns: patternRegexps,
+      relativeTo: options.relativeTo || uri
     });
   }
 
-  public async fileAsLMP(uri: string): Promise<string> {
-    return await this.lmpOperator.copyFileAsLmp(uri);
+  public async fileAsLMP(uri: string, relativeTo?: string): Promise<string> {
+    return await this.lmpOperator.copyFileAsLmp(uri, relativeTo);
   }
 
   private _getHtmlForWebview(webview: vscode.Webview): string {

@@ -29,12 +29,15 @@ export function activate(context: vscode.ExtensionContext): void {
         let lmpContent = '';
         // Case 1: Multiple items selected (uris parameter will be populated)
         if (uris && uris.length > 0) {
+          // Find common parent directory for all selected items
+          const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+          
           for (const selectedUri of uris) {
             const stat = await vscode.workspace.fs.stat(selectedUri);
             if (stat.type === vscode.FileType.Directory) {
-              lmpContent += await provider.folderAsLMP(selectedUri.fsPath);
+              lmpContent += await provider.folderAsLMP(selectedUri.fsPath, { relativeTo: workspaceRoot });
             } else if (stat.type === vscode.FileType.File) {
-              lmpContent += await provider.fileAsLMP(selectedUri.fsPath);
+              lmpContent += await provider.fileAsLMP(selectedUri.fsPath, workspaceRoot);
             }
           }
           await vscode.env.clipboard.writeText(lmpContent);
@@ -44,13 +47,14 @@ export function activate(context: vscode.ExtensionContext): void {
         
         // Case 2: Single item selected (uri parameter will be populated)
         if (uri) {
+          const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
           const stat = await vscode.workspace.fs.stat(uri);
           if (stat.type === vscode.FileType.Directory) {
-            lmpContent = await provider.folderAsLMP(uri.fsPath);
+            lmpContent = await provider.folderAsLMP(uri.fsPath, { relativeTo: workspaceRoot });
             await vscode.env.clipboard.writeText(lmpContent);
             vscode.window.showInformationMessage(`Folder "${path.basename(uri.fsPath)}" copied as LMP format`);
           } else if (stat.type === vscode.FileType.File) {
-            lmpContent = await provider.fileAsLMP(uri.fsPath);
+            lmpContent = await provider.fileAsLMP(uri.fsPath, workspaceRoot);
             await vscode.env.clipboard.writeText(lmpContent);
             vscode.window.showInformationMessage(`File "${path.basename(uri.fsPath)}" copied as LMP format`);
           }
@@ -86,14 +90,16 @@ export function activate(context: vscode.ExtensionContext): void {
         }
 
         let lmpContent = '';
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+        
         // Case 1: Multiple items selected (uris parameter will be populated)
         if (uris && uris.length > 0) {
           for (const selectedUri of uris) {
             const stat = await vscode.workspace.fs.stat(selectedUri);
             if (stat.type === vscode.FileType.Directory) {
-              lmpContent += await provider.folderAsLMP(selectedUri.fsPath);
+              lmpContent += await provider.folderAsLMP(selectedUri.fsPath, { relativeTo: workspaceRoot });
             } else if (stat.type === vscode.FileType.File) {
-              lmpContent += await provider.fileAsLMP(selectedUri.fsPath);
+              lmpContent += await provider.fileAsLMP(selectedUri.fsPath, workspaceRoot);
             }
           }
           
@@ -107,12 +113,12 @@ export function activate(context: vscode.ExtensionContext): void {
         if (uri) {
           const stat = await vscode.workspace.fs.stat(uri);
           if (stat.type === vscode.FileType.Directory) {
-            lmpContent = await provider.folderAsLMP(uri.fsPath);
+            lmpContent = await provider.folderAsLMP(uri.fsPath, { relativeTo: workspaceRoot });
             const formattedContent = formatLmpWithInstructions(lmpContent, instructionPrompt);
             await vscode.env.clipboard.writeText(formattedContent);
             vscode.window.showInformationMessage(`Folder "${path.basename(uri.fsPath)}" copied as LMP format with instructions`);
           } else if (stat.type === vscode.FileType.File) {
-            lmpContent = await provider.fileAsLMP(uri.fsPath);
+            lmpContent = await provider.fileAsLMP(uri.fsPath, workspaceRoot);
             const formattedContent = formatLmpWithInstructions(lmpContent, instructionPrompt);
             await vscode.env.clipboard.writeText(formattedContent);
             vscode.window.showInformationMessage(`File "${path.basename(uri.fsPath)}" copied as LMP format with instructions`);
@@ -139,7 +145,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
 function formatLmpWithInstructions(lmpContent: string, instruction: string): string {
   const standardInstructions = `Follow these instructions **exactly and without deviation**:
-
 * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
 * Inside the LMP file:
   - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
