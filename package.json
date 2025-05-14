@@ -15,6 +15,7 @@
   "activationEvents": [
     "onCommand:lmpActions.extract",
     "onCommand:lmpActions.copyAsLMP",
+    "onCommand:lmpActions.copyAsLMPWithInstructions",
     "onView:lmpActionsView"
   ],
   "main": "./out/extension.js",
@@ -92,12 +93,20 @@
       {
         "command": "lmpActions.copyAsLMP",
         "title": "Copy as LMP"
+      },
+      {
+        "command": "lmpActions.copyAsLMPWithInstructions",
+        "title": "Copy as LMP - Edit instruction"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "lmpActions.copyAsLMP",
+          "group": "navigation"
+        },
+        {
+          "command": "lmpActions.copyAsLMPWithInstructions",
           "group": "navigation"
         }
       ]
