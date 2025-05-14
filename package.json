@@ -91,6 +91,11 @@
             ".bin"
           ],
           "description": "File extensions to exclude when copying as LMP"
+        },
+        "lmpActions.editInstruction": {
+          "type": "string",
+          "default": "Update this project with minimal modifications on pre existent code.\nSend me only modified files, without gaps or unchanged files.",
+          "description": "Custom instruction for editing LMP files"
         }
       }
     },
