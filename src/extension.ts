@@ -144,6 +144,8 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 function formatLmpWithInstructions(lmpContent: string, instruction: string): string {
+  const editInstruction = `Update this project with minimal modifications on pre existent code.
+Send me only modified files, without gaps or unchanged files.`;
   const standardInstructions = `Follow these instructions **exactly and without deviation**:
 * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
 * Inside the LMP file:
@@ -159,8 +161,7 @@ function formatLmpWithInstructions(lmpContent: string, instruction: string): str
   - Do **not** use Markdown under any circumstances.
   - Apply AsciiDoc syntax consistently throughout all documentation files.
 
-Update this project with minimal modifications on pre existent code.
-Send me only modified files, without gaps or unchanged files.
+${editInstruction}
 ---
 ${instruction}`;
 
