@@ -75,7 +75,15 @@ export class LmpOperator {
     if (!await fs.pathExists(folderPath)) {
       throw new Error(`Folder does not exist: ${folderPath}`);
     }
-    const files = await this.getAllFiles(folderPath, opts);
+    
+    // Parse .gitignore files
+    const gitignorePatterns = await this.parseGitignoreFiles(folderPath);
+    
+    const files = await this.getAllFiles(folderPath, {
+      ...opts,
+      gitignorePatterns
+    });
+    
     let lmpContent = '';
     for (const file of files) {
       try {
@@ -115,12 +123,129 @@ export class LmpOperator {
     }
   }
 
+  private async parseGitignoreFiles(rootDir: string): Promise<string[]> {
+    const gitignorePatterns: string[] = [];
+    
+    // Find all .gitignore files in the directory tree
+    const gitignoreFiles = await this.findGitignoreFiles(rootDir);
+    
+    // Parse each .gitignore file
+    for (const gitignoreFile of gitignoreFiles) {
+      const gitignoreDir = path.dirname(gitignoreFile);
+      const content = await fs.readFile(gitignoreFile, 'utf8');
+      const patterns = this.parseGitignoreContent(content);
+      
+      // Add the patterns with their directory context
+      for (const pattern of patterns) {
+        // Convert pattern to absolute path relative to the gitignore location
+        const absolutePattern = path.join(gitignoreDir, pattern).replace(/\\/g, '/');
+        gitignorePatterns.push(absolutePattern);
+      }
+    }
+    
+    return gitignorePatterns;
+  }
+  
+  private async findGitignoreFiles(dir: string): Promise<string[]> {
+    const gitignoreFiles: string[] = [];
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    
+    // Check if there's a .gitignore in this directory
+    const gitignorePath = path.join(dir, '.gitignore');
+    if (await fs.pathExists(gitignorePath)) {
+      gitignoreFiles.push(gitignorePath);
+    }
+    
+    // Recursively check subdirectories
+    for (const entry of entries) {
+      if (entry.isDirectory() && entry.name !== '.git' && entry.name !== 'node_modules') {
+        const subDirPath = path.join(dir, entry.name);
+        const subDirGitignores = await this.findGitignoreFiles(subDirPath);
+        gitignoreFiles.push(...subDirGitignores);
+      }
+    }
+    
+    return gitignoreFiles;
+  }
+  
+  private parseGitignoreContent(content: string): string[] {
+    const lines = content.split('\n');
+    const patterns: string[] = [];
+    
+    for (let line of lines) {
+      // Remove comments and trim
+      line = line.replace(/#.*$/, '').trim();
+      
+      // Skip empty lines
+      if (!line) {
+        continue;
+      }
+      
+      // Add the pattern
+      patterns.push(line);
+    }
+    
+    return patterns;
+  }
+  
+  private isPathIgnoredByGitignore(filePath: string, gitignorePatterns: string[]): boolean {
+    if (!gitignorePatterns.length) {
+      return false;
+    }
+    
+    // Convert Windows paths to forward slashes for consistency
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    
+    for (const pattern of gitignorePatterns) {
+      // Handle negation patterns (those starting with !)
+      const isNegation = pattern.startsWith('!');
+      const actualPattern = isNegation ? pattern.substring(1) : pattern;
+      
+      // Convert gitignore glob pattern to regex
+      let regexPattern = this.globToRegExp(actualPattern);
+      
+      // Check if the path matches the pattern
+      const matches = new RegExp(regexPattern).test(normalizedPath);
+      
+      if (matches) {
+        // If it's a negation pattern and matches, the file should NOT be ignored
+        if (isNegation) {
+          return false;
+        }
+        // If it's a regular pattern and matches, the file should be ignored
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  private globToRegExp(pattern: string): string {
+    // This is a simplified version - a real implementation would be more complex
+    let regexPattern = pattern
+      // Escape regex special chars except * and ?
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      // Convert * to .*
+      .replace(/\*/g, '.*')
+      // Convert ? to .
+      .replace(/\?/g, '.');
+    
+    // Handle directory-specific patterns (ending with /)
+    if (regexPattern.endsWith('/')) {
+      regexPattern += '.*';
+    }
+    
+    // Make it match the whole path
+    return `^${regexPattern}$`;
+  }
+
   private async getAllFiles(
     dir: string,
     options: {
       excludeExtensions: string[];
       excludePatterns: RegExp[];
       relativeTo: string;
+      gitignorePatterns?: string[];
     }
   ): Promise<string[]> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -131,9 +256,17 @@ export class LmpOperator {
         return [];
       }
       const relativePath = path.relative(options.relativeTo, res).replace(/\\/g, '/');
+      
+      // Check if the path matches any exclude pattern
       if (options.excludePatterns.some(pattern => pattern.test(relativePath))) {
         return [];
       }
+      
+      // Check if the path is ignored by gitignore
+      if (options.gitignorePatterns && this.isPathIgnoredByGitignore(res, options.gitignorePatterns)) {
+        return [];
+      }
+      
       return entry.isDirectory() ? this.getAllFiles(res, options) : [res];
     }));
     return files.flat();
