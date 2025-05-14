@@ -94,7 +94,7 @@
         },
         "lmpActions.editInstruction": {
           "type": "string",
-          "default": "Update this project with minimal modifications on pre existent code.\nSend me only modified files, without gaps or unchanged files.",
+          "default": "Update this project with minimal modifications to the existing code.\nAlways return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\nOnly send the files that were actually modified.",
           "description": "Custom instruction for editing LMP files"
         }
       }
