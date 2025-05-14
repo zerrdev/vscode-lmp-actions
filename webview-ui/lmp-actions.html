@@ -314,13 +314,8 @@
             function updateFileTree(text) {
                 fileTreeListEl.innerHTML = '';
 
-                const fileRegex = /\[FILE_START: (.+?)\]/g;
-                let match;
-                let files = [];
-
-                while ((match = fileRegex.exec(text)) !== null) {
-                    files.push(match[1]);
-                }
+                // Find all complete file entries (with both opening and closing tags)
+                const files = findCompleteFileEntries(text);
 
                 // Update file count
                 fileCountEl.textContent = files.length > 0 ? `(${files.length} files)` : '(No files)';
@@ -341,6 +336,30 @@
 
                 // Add event listeners to carets
                 setupTreeInteractions();
+            }
+
+            function findCompleteFileEntries(text) {
+                const lines = text.split('\n');
+                const files = [];
+                let isReadingFile = false;
+                let currentFilePath = '';
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    if (!isReadingFile && line.match(/^\[FILE_START: .+\]$/)) {
+                        isReadingFile = true;
+                        currentFilePath = line.replace(/^\[FILE_START: (.+)\]$/, '$1').trim();
+                    } else if (isReadingFile && line.match(/^\[FILE_END: .+\]$/)) {
+                        const foundFilePath = line.replace(/^\[FILE_END: (.+)\]$/, '$1').trim();
+                        if (currentFilePath === foundFilePath) {
+                            files.push(currentFilePath);
+                            isReadingFile = false;
+                        }
+                    }
+                }
+                
+                return files;
             }
 
             function updateTreeRoot() {
