@@ -148,7 +148,10 @@ function formatLmpWithInstructions(lmpContent: string, userPrompt: string): stri
   const editInstruction = config.get<string>('editInstruction') || 
     "Update this project with minimal modifications to the existing code.\nAlways return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\nOnly send the files that were actually modified.";
   
-  const standardInstructions = `Follow these instructions **exactly and without deviation**:
+  const standardInstructions = `My project:
+\`\`\`\n${lmpContent}\n\`\`\`
+
+Follow these instructions **exactly and without deviation**:
 * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
 * Inside the LMP file:
   - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
@@ -164,7 +167,6 @@ function formatLmpWithInstructions(lmpContent: string, userPrompt: string): stri
   - Apply AsciiDoc syntax consistently throughout all documentation files.
 
 ${editInstruction}
-\`\`\`\n${lmpContent}\n\`\`\`
 ---
 ${userPrompt}`;
 
