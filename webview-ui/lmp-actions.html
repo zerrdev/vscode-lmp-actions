@@ -231,12 +231,40 @@
             background-color: var(--vscode-list-activeSelectionBackground);
             color: var(--vscode-list-activeSelectionForeground);
         }
+
+        /* Separator style */
+        .separator {
+            height: 1px;
+            background-color: var(--vscode-panel-border);
+            margin: 8px 0;
+        }
+
+        /* Top actions bar */
+        .top-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        #copyCreatePromptButton {
+            background-color: var(--vscode-button-secondaryBackground, #0e639c);
+            color: var(--vscode-button-secondaryForeground, #ffffff);
+        }
+
+        #copyCreatePromptButton:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground, #1177bb);
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h3>LMP Actions</h3>
+
+        <div class="top-actions">
+            <button id="copyCreatePromptButton">Copy Create Prompt</button>
+        </div>
+        <div class="separator"></div>
 
         <label for="textContent">Paste file content:</label>
         <textarea id="textContent" placeholder="Paste your file content here..."></textarea>
@@ -273,6 +301,7 @@
             const fileTreeListEl = document.getElementById('fileTreeList');
             const fileCountEl = document.getElementById('fileCount');
             const treeRootEl = document.getElementById('treeRoot');
+            const copyCreatePromptButtonEl = document.getElementById('copyCreatePromptButton');
 
             let currentOutputDir = '';
             let fileContents = {}; // Store file contents for preview
@@ -280,6 +309,12 @@
             browseButtonEl.addEventListener('click', () => {
                 vscode.postMessage({
                     command: 'selectDirectory'
+                });
+            });
+
+            copyCreatePromptButtonEl.addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'copyCreatePrompt'
                 });
             });
 

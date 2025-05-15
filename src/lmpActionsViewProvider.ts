@@ -102,8 +102,35 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
           }
           break;
         }
+        case 'copyCreatePrompt': {
+          // Handle copy create prompt request
+          await this.copyCreatePrompt();
+          break;
+        }
       }
     });
+  }
+
+  private async copyCreatePrompt(): Promise<void> {
+    const createPrompt = `Follow these instructions **exactly and without deviation**:
+* Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
+* Inside the LMP file:
+  - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
+  - Output must be **raw plain text only**.
+  - Use this format for each file:
+    [FILE_START: path/to/file.ext]  
+    ...file contents...  
+    [FILE_END: path/to/file.ext]
+* The LMP file must contain **all files required** for a fully functional, runnable project.
+* For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
+  - Do **not** use Markdown under any circumstances.
+  - Apply AsciiDoc syntax consistently throughout all documentation files.
+* DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
+---
+Create a`;
+
+    await vscode.env.clipboard.writeText(createPrompt);
+    vscode.window.showInformationMessage('Create prompt copied to clipboard');
   }
 
   private async showFilePreview(filePath: string, content: string): Promise<void> {
