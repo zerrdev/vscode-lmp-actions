@@ -5,7 +5,7 @@
   "repository": {
     "url": "https://github.com/zerrdev/lmp-actions"
   },
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -94,7 +94,7 @@
         },
         "lmpActions.editInstruction": {
           "type": "string",
-          "default": "Update this project with minimal modifications to the existing code.\nAlways return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\nOnly send the files that were actually modified.",
+          "default": "Follow these instructions **exactly and without deviation**:\\n* Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \\`\\`\\`txt). This outer block must contain the complete contents of the LMP file.\\n* Inside the LMP file:\\n  - Do **not** include any fenced code blocks (e.g., \\`\\`\\`), markdown, or any kind of code formatting.\\n  - Output must be **raw plain text only**.\\n  - Use this format for each file:\\n    [FILE_START: path/to/file.ext]  \\n    ...file contents...  \\n    [FILE_END: path/to/file.ext]\\n* The LMP file must contain **modified files** only.\\n* Always return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\\n* Preserve the **exact directory and file structure**.\\n* Do **not** do unrequested modifications.\\n* For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  \\n  - Do **not** use Markdown under any circumstances.\\n  - Apply AsciiDoc syntax consistently throughout all documentation files.\\n* DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!",
           "description": "Custom instruction for editing LMP files"
         }
       }

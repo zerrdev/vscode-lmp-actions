@@ -145,12 +145,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
 function formatLmpWithInstructions(lmpContent: string, userPrompt: string): string {
   const config = vscode.workspace.getConfiguration('lmpActions');
-  const editInstruction = config.get<string>('editInstruction') || 
-    "Update this project with minimal modifications to the existing code.\nAlways return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\n**Only send the files that were actually modified.**";
-  
-  const standardInstructions = `My project:
-\`\`\`\n${lmpContent}\n\`\`\`
-
+    const editInstruction = config.get<string>('editInstruction') || 
+    `
 Follow these instructions **exactly and without deviation**:
 * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
 * Inside the LMP file:
@@ -160,17 +156,24 @@ Follow these instructions **exactly and without deviation**:
     [FILE_START: path/to/file.ext]  
     ...file contents...  
     [FILE_END: path/to/file.ext]
-* The LMP file must contain **all files required** for a fully functional, runnable project.
+* The LMP file must contain **modified files** only.
+* Always return the **complete modified file(s)** — do not include placeholders like "rest of file" or "..." and do not omit unchanged parts.
 * Preserve the **exact directory and file structure**.
+* Do **not** do unrequested modifications.
 * For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
   - Do **not** use Markdown under any circumstances.
   - Apply AsciiDoc syntax consistently throughout all documentation files.
-
+* DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
+    `;
+  const standardInstructions = `  
 ${editInstruction}
 
-# ${userPrompt}
-`;
+Project files:
+\`\`\`\n${lmpContent}\n\`\`\`
 
+What you need to do: 
+${userPrompt}
+`;
   return `${standardInstructions}`;
 }
 
