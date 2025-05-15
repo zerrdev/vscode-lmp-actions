@@ -143,7 +143,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
-function formatLmpWithInstructions(lmpContent: string, instruction: string): string {
+function formatLmpWithInstructions(lmpContent: string, userPrompt: string): string {
   const config = vscode.workspace.getConfiguration('lmpActions');
   const editInstruction = config.get<string>('editInstruction') || 
     "Update this project with minimal modifications to the existing code.\nAlways return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\nOnly send the files that were actually modified.";
@@ -164,10 +164,11 @@ function formatLmpWithInstructions(lmpContent: string, instruction: string): str
   - Apply AsciiDoc syntax consistently throughout all documentation files.
 
 ${editInstruction}
+\`\`\`\n${lmpContent}\n\`\`\`
 ---
-${instruction}`;
+${userPrompt}`;
 
-  return `\`\`\`\n${lmpContent}\`\`\`\n${standardInstructions}`;
+  return `${standardInstructions}`;
 }
 
 export function deactivate(): void {}
