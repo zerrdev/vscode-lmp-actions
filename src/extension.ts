@@ -147,33 +147,35 @@ function formatLmpWithInstructions(lmpContent: string, userPrompt: string): stri
   const config = vscode.workspace.getConfiguration('lmpActions');
     const editInstruction = config.get<string>('editInstruction') || 
     `
-Follow these instructions **exactly and without deviation**:
-* Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
-* Inside the LMP file:
-  - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
-  - Output must be **raw plain text only**.
-  - Use this format for each file:
-    [FILE_START: path/to/file.ext]  
-    ...file contents...  
-    [FILE_END: path/to/file.ext]
-* The LMP file must contain **modified files** only.
-* Always return the **complete modified file(s)** — do not include placeholders like "rest of file" or "..." and do not omit unchanged parts.
-* Preserve the **exact directory and file structure**.
-* Do **not** do unrequested modifications.
-* For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
-  - Do **not** use Markdown under any circumstances.
-  - Apply AsciiDoc syntax consistently throughout all documentation files.
-* DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
+      Follow these instructions **exactly and without deviation**:
+      * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
+      * Inside the LMP file:
+        - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
+        - Output must be **raw plain text only**.
+        - Use this format for each file:
+          [FILE_START: path/to/file.ext]  
+          ...file contents...  
+          [FILE_END: path/to/file.ext]
+      * The LMP file must contain **modified files** only.
+      * Always return the **complete modified file(s)** — do not include placeholders like "rest of file" or "..." and do not omit unchanged parts.
+      * Preserve the **exact directory and file structure**.
+      * Do **not** do unrequested modifications.
+      * For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
+        - Do **not** use Markdown under any circumstances.
+        - Apply AsciiDoc syntax consistently throughout all documentation files.
+      * DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
     `;
   const standardInstructions = `  
-${editInstruction}
-
-Project files:
-\`\`\`\n${lmpContent}\n\`\`\`
-
-What you need to do: 
-${userPrompt}
-`;
+    <rules>
+      ${editInstruction}
+    </rules>
+    <files>
+      \`\`\`\n${lmpContent}\n\`\`\`
+    </files>
+    <instruction>
+      ${userPrompt}
+    </instruction>
+  `;
   return `${standardInstructions}`;
 }
 
