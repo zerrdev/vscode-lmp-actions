@@ -3,10 +3,10 @@ import path from 'path';
 import * as fs from 'fs-extra';
 import { readConfig } from "./utils";
 
-function newInstruction(context: vscode.ExtensionContext, rulesKey: string, userPrompt: string, lmpContent?: string): string {
+function newInstruction(context: vscode.ExtensionContext, rulesKey: string, promptStructureKey: string, userPrompt: string, lmpContent?: string): string {
   const config: any = readConfig(context);
 
-  const promptBase: string = config.lmpActions.promptStructure;
+  const promptBase: string = config.lmpActions[promptStructureKey];
   const rules: string = config.lmpActions[rulesKey];
 
   let standardInstructions: string = promptBase;
@@ -20,11 +20,11 @@ function newInstruction(context: vscode.ExtensionContext, rulesKey: string, user
 }
 
 function newEditInstruction(context: vscode.ExtensionContext, lmpContent: string, userPrompt: string): string {
-  return newInstruction(context, 'editRules', userPrompt, lmpContent);
+  return newInstruction(context, 'editRules', 'editPromptStructure', userPrompt, lmpContent);
 }
 
 function newCreateInstruction(context: vscode.ExtensionContext, userPrompt: string): string {
-  return newInstruction(context, 'createRules', userPrompt, undefined);
+  return newInstruction(context, 'createRules', 'createPromptStructure', userPrompt, undefined);
 }
 
 export const instructionFactory = {

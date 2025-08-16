@@ -1,6 +1,6 @@
 version: 0.0.7
 lmpActions:
-  promptStructure: >
+  editPromptStructure: >
     <lmp>
       <rules>
         #RULES#
@@ -11,6 +11,15 @@ lmpActions:
       <files>
         #FILES#
       </files>
+    </lmp>
+  createPromptStructure: >
+    <lmp>
+      <rules>
+        #RULES#
+      </rules>
+      <instruction>
+        #USER_PROMPT#
+      </instruction>
     </lmp>
   editRules: >
     Follow these instructions **exactly and without deviation**:
