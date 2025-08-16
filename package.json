@@ -14,6 +14,13 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:lmpActions.copyCreatePrompt",
+    "onCommand:lmpActions.extract",
+    "onCommand:lmpActions.copyAsLMP",
+    "onCommand:lmpActions.copyAsLMPWithInstructions",
+    "onView:lmpActionsView"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
