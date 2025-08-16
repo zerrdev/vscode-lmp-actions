@@ -29,7 +29,34 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
       enableScripts: true,
       localResourceRoots: [this._extensionUri]
     };
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    const mainCssUri = webviewView.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'webview-ui', 'styles', 'main.css')
+    );
+    const mithrilUri = webviewView.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'webview-ui', 'js', 'mithril.js')
+    );
+    const componentsUri = webviewView.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'webview-ui', 'js', 'components.js')
+    );
+    const vscodeServiceUri = webviewView.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'webview-ui', 'js', 'services', 'vscode.js')
+    );
+    const fileParserServiceUri = webviewView.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'webview-ui', 'js', 'services', 'file-parser.js')
+    );
+    const appUri = webviewView.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'webview-ui', 'js', 'app.js')
+    );
+
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview, {
+      appUri,
+      mainCssUri,
+      componentsUri,
+      mithrilUri,
+      vscodeServiceUri,
+      fileParserServiceUri
+    });
 
     // Initialize with default workspace path
     const defaultOutputDir = this.getDefaultWorkspacePath();
@@ -38,7 +65,7 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
         type: 'initializeOutputDir',
         directory: defaultOutputDir
       });
-    }
+    }   
 
     webviewView.webview.onDidReceiveMessage(async (data: any) => {
       switch (data.command) {
@@ -259,10 +286,14 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     return await this.lmpOperator.copyFileAsLmp(uri, relativeTo);
   }
 
-  private _getHtmlForWebview(webview: vscode.Webview): string {
+  private _getHtmlForWebview(webview: vscode.Webview, uriMap: object): string {
     const extensionPath = this.context.extensionPath;
-    const htmlPath = vscode.Uri.file(path.join(extensionPath, 'webview-ui', 'lmp-actions.html'));
-    const htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf8');
+    const htmlPath = vscode.Uri.file(path.join(extensionPath, 'webview-ui', 'index.html'));
+    let htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf8');
+    for (let uriPlaceholder of Object.keys(uriMap)) {
+      htmlContent = htmlContent.replace("${" + uriPlaceholder + "}", (uriMap as any)[uriPlaceholder] as string ?? '');
+    }
+
     return htmlContent.replace(/\$\{webview\.cspSource\}/g, webview.cspSource);
   }
 

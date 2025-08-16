@@ -4,7 +4,6 @@ import path from 'path';
 import { copyDefaultConfig } from './utils';
 import { instructionFactory } from './instructionFactory';
 
-
 export function activate(context: vscode.ExtensionContext): void {
   copyDefaultConfig(context);
   const provider = new LmpActionsViewProvider(context);
