@@ -2,103 +2,19 @@
   "name": "lmp-actions",
   "displayName": "LMP Actions",
   "description": "Handles lumped files (LMP) providing extraction and directory parsing",
+  "publisher": "zerrdev",
   "repository": {
     "url": "https://github.com/zerrdev/lmp-actions"
   },
-  "version": "0.0.5",
+  "version": "0.0.7",
   "engines": {
     "vscode": "^1.60.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:lmpActions.extract",
-    "onCommand:lmpActions.copyAsLMP",
-    "onCommand:lmpActions.copyAsLMPWithInstructions",
-    "onView:lmpActionsView"
-  ],
   "main": "./out/extension.js",
   "contributes": {
-    "configuration": {
-      "title": "LMP Actions",
-      "properties": {
-        "lmpActions.excludePatterns": {
-          "type": "array",
-          "default": [
-            "node_modules",
-            "\\.git",
-            "\\.svn",
-            "\\.hg",
-            "\\.idea",
-            "\\.vscode",
-            "\\.nuget/",
-            "\\.env/",
-            "__pycache__",
-            "\\.pytest_cache",
-            "\\.gradle/",
-            "\\.m2/",
-            "\\.bundle/",
-            "\\.sass-cache/",
-            "\\.DS_Store",
-            "Thumbs\\.db"
-          ],
-          "description": "Folder patterns to exclude when copying as LMP"
-        },
-        "lmpActions.excludeExtensions": {
-          "type": "array",
-          "default": [
-            ".md",
-            ".exe",
-            ".msi",
-            ".pdf",
-            ".docx",
-            ".xlsx",
-            ".zip",
-            ".bin",
-            ".dat",
-            ".dll",
-            ".so",
-            ".dylib",
-            ".jar",
-            ".class",
-            ".obj",
-            ".o",
-            ".lib",
-            ".a",
-            ".pyc",
-            ".pyd",
-            ".pyo",
-            ".wasm",
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".svg",
-            ".ico",
-            ".mp3",
-            ".mp4",
-            ".wav",
-            ".db",
-            ".sqlite",
-            ".pb",
-            ".proto",
-            ".tar",
-            ".gz",
-            ".7z",
-            ".rar",
-            ".iso",
-            ".bin"
-          ],
-          "description": "File extensions to exclude when copying as LMP"
-        },
-        "lmpActions.editInstruction": {
-          "type": "string",
-          "default": "Follow these instructions **exactly and without deviation**:\\n* Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \\`\\`\\`txt). This outer block must contain the complete contents of the LMP file.\\n* Inside the LMP file:\\n  - Do **not** include any fenced code blocks (e.g., \\`\\`\\`), markdown, or any kind of code formatting.\\n  - Output must be **raw plain text only**.\\n  - Use this format for each file:\\n    [FILE_START: path/to/file.ext]  \\n    ...file contents...  \\n    [FILE_END: path/to/file.ext]\\n* The LMP file must contain **modified files** only.\\n* Always return the **complete modified file(s)** — do not include placeholders like \"rest of file\" or \"...\" and do not omit unchanged parts.\\n* Preserve the **exact directory and file structure**.\\n* Do **not** do unrequested modifications.\\n* For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  \\n  - Do **not** use Markdown under any circumstances.\\n  - Apply AsciiDoc syntax consistently throughout all documentation files.\\n* DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!",
-          "description": "Custom instruction for editing LMP files"
-        }
-      }
-    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -113,11 +29,16 @@
         {
           "id": "lmpActionsView",
           "name": "LMP Actions",
-          "type": "webview"
+          "type": "webview",
+          "icon": "resources/icon.svg"
         }
       ]
     },
     "commands": [
+      {
+        "command": "lmpActions.copyCreatePrompt",
+        "title": "Copy as LMP - Create Prompt"
+      },
       {
         "command": "lmpActions.extract",
         "title": "Extract Files"
@@ -155,6 +76,7 @@
     "@eslint/js": "^9.26.0",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^7.1.4",
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^9.0.0",
     "@types/node": "14.x",
     "@types/vscode": "^1.60.0",
@@ -169,6 +91,7 @@
     "typescript-eslint": "^8.32.1"
   },
   "dependencies": {
-    "fs-extra": "^11.3.0"
+    "fs-extra": "^11.3.0",
+    "js-yaml": "^4.1.0"
   }
 }

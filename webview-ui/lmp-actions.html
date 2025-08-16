@@ -260,6 +260,8 @@
 <body>
     <div class="container">
         <h3>LMP Actions</h3>
+        <button id="openConfigBtn">Open config</button>
+        <button id="openUserConfigBtn">Open user config</button>
 
         <div class="top-actions">
             <button id="copyCreatePromptButton">Copy Create Prompt</button>
@@ -302,6 +304,8 @@
             const fileCountEl = document.getElementById('fileCount');
             const treeRootEl = document.getElementById('treeRoot');
             const copyCreatePromptButtonEl = document.getElementById('copyCreatePromptButton');
+            const openConfigBtnEl = document.getElementById("openConfigBtn");
+            const openUserConfigBtnEl = document.getElementById("openUserConfigBtn");
 
             let currentOutputDir = '';
             let fileContents = {}; // Store file contents for preview
@@ -315,6 +319,18 @@
             copyCreatePromptButtonEl.addEventListener('click', () => {
                 vscode.postMessage({
                     command: 'copyCreatePrompt'
+                });
+            });
+
+            openConfigBtnEl.addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'openBaseConfig'
+                });
+            });
+
+            openUserConfigBtnEl.addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'openUserConfig'
                 });
             });
 

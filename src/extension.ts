@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
 import { LmpActionsViewProvider } from './lmpActionsViewProvider';
 import path from 'path';
+import { copyDefaultConfig } from './utils';
+import { instructionFactory } from './instructionFactory';
+
 
 export function activate(context: vscode.ExtensionContext): void {
+  copyDefaultConfig(context);
   const provider = new LmpActionsViewProvider(context);
 
   context.subscriptions.push(
@@ -31,7 +35,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (uris && uris.length > 0) {
           // Find common parent directory for all selected items
           const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
-          
+
           for (const selectedUri of uris) {
             const stat = await vscode.workspace.fs.stat(selectedUri);
             if (stat.type === vscode.FileType.Directory) {
@@ -44,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
           vscode.window.showInformationMessage(`${uris.length} items copied as LMP format`);
           return;
         }
-        
+
         // Case 2: Single item selected (uri parameter will be populated)
         if (uri) {
           const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
@@ -60,7 +64,7 @@ export function activate(context: vscode.ExtensionContext): void {
           }
           return;
         }
-        
+
         // Case 3: No selection, copy entire workspace
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {
@@ -80,6 +84,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('lmpActions.copyAsLMPWithInstructions', async (uri: vscode.Uri, uris: vscode.Uri[]) => {
       try {
         const instructionPrompt = await vscode.window.showInputBox({
+          ignoreFocusOut: true,
           prompt: 'Enter your instruction for this LMP file',
           placeHolder: 'e.g., Add a login feature to this React app'
         });
@@ -91,7 +96,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
         let lmpContent = '';
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
-        
+
         // Case 1: Multiple items selected (uris parameter will be populated)
         if (uris && uris.length > 0) {
           for (const selectedUri of uris) {
@@ -102,35 +107,35 @@ export function activate(context: vscode.ExtensionContext): void {
               lmpContent += await provider.fileAsLMP(selectedUri.fsPath, workspaceRoot);
             }
           }
-          
-          const formattedContent = formatLmpWithInstructions(lmpContent, instructionPrompt);
+
+          const formattedContent = instructionFactory.newEditInstruction(context, lmpContent, instructionPrompt);
           await vscode.env.clipboard.writeText(formattedContent);
           vscode.window.showInformationMessage(`${uris.length} items copied as LMP format with instructions`);
           return;
         }
-        
+
         // Case 2: Single item selected (uri parameter will be populated)
         if (uri) {
           const stat = await vscode.workspace.fs.stat(uri);
           if (stat.type === vscode.FileType.Directory) {
             lmpContent = await provider.folderAsLMP(uri.fsPath, { relativeTo: workspaceRoot });
-            const formattedContent = formatLmpWithInstructions(lmpContent, instructionPrompt);
+            const formattedContent = instructionFactory.newEditInstruction(context, lmpContent, instructionPrompt);
             await vscode.env.clipboard.writeText(formattedContent);
             vscode.window.showInformationMessage(`Folder "${path.basename(uri.fsPath)}" copied as LMP format with instructions`);
           } else if (stat.type === vscode.FileType.File) {
             lmpContent = await provider.fileAsLMP(uri.fsPath, workspaceRoot);
-            const formattedContent = formatLmpWithInstructions(lmpContent, instructionPrompt);
+            const formattedContent = instructionFactory.newEditInstruction(context, lmpContent, instructionPrompt);
             await vscode.env.clipboard.writeText(formattedContent);
             vscode.window.showInformationMessage(`File "${path.basename(uri.fsPath)}" copied as LMP format with instructions`);
           }
           return;
         }
-        
+
         // Case 3: No selection, copy entire workspace
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {
           lmpContent = await provider.folderAsLMP(workspaceFolders[0].uri.fsPath);
-          const formattedContent = formatLmpWithInstructions(lmpContent, instructionPrompt);
+          const formattedContent = instructionFactory.newEditInstruction(context, lmpContent, instructionPrompt);
           await vscode.env.clipboard.writeText(formattedContent);
           vscode.window.showInformationMessage(`Workspace "${workspaceFolders[0].name}" copied as LMP format with instructions`);
         } else {
@@ -142,41 +147,3 @@ export function activate(context: vscode.ExtensionContext): void {
     })
   );
 }
-
-function formatLmpWithInstructions(lmpContent: string, userPrompt: string): string {
-  const config = vscode.workspace.getConfiguration('lmpActions');
-    const editInstruction = config.get<string>('editInstruction') || 
-    `
-      Follow these instructions **exactly and without deviation**:
-      * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
-      * Inside the LMP file:
-        - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
-        - Output must be **raw plain text only**.
-        - Use this format for each file:
-          [FILE_START: path/to/file.ext]  
-          ...file contents...  
-          [FILE_END: path/to/file.ext]
-      * The LMP file must contain **modified files** only.
-      * Always return the **complete modified file(s)** — do not include placeholders like "rest of file" or "..." and do not omit unchanged parts.
-      * Preserve the **exact directory and file structure**.
-      * Do **not** do unrequested modifications.
-      * For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
-        - Do **not** use Markdown under any circumstances.
-        - Apply AsciiDoc syntax consistently throughout all documentation files.
-      * DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
-    `;
-  const standardInstructions = `  
-    <rules>
-      ${editInstruction}
-    </rules>
-    <files>
-      \`\`\`\n${lmpContent}\n\`\`\`
-    </files>
-    <instruction>
-      ${userPrompt}
-    </instruction>
-  `;
-  return `${standardInstructions}`;
-}
-
-export function deactivate(): void {}

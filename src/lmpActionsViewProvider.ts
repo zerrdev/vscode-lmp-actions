@@ -3,6 +3,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import os from 'os';
 import { LmpOperator } from './lmpOperator';
+import { getDefaultConfigPath, getUserConfigPath, readConfig } from './utils';
+import { instructionFactory } from './instructionFactory';
 
 export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'lmpActionsView';
@@ -38,7 +40,7 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
       });
     }
 
-    webviewView.webview.onDidReceiveMessage(async (data) => {
+    webviewView.webview.onDidReceiveMessage(async (data: any) => {
       switch (data.command) {
         case 'extract':
           if (data.textContent && data.outputDir) {
@@ -107,35 +109,64 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
           await this.copyCreatePrompt();
           break;
         }
+        case 'openBaseConfig': {
+          // Handle copy create prompt request
+          await this.openConfigFile('base');
+          break;
+        }
+        case 'openUserConfig': {
+          await this.openConfigFile('user');
+          break;
+        }
       }
     });
   }
 
-  private async copyCreatePrompt(): Promise<void> {
-    const createPrompt = `
-    <rules>
-      Follow these rules **exactly and without deviation**:
-    * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
-    * Inside the LMP file:
-      - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
-      - Output must be **raw plain text only**.
-      - Use this format for each file:
-        [FILE_START: path/to/file.ext]  
-        ...file contents...  
-        [FILE_END: path/to/file.ext]
-    * The LMP file must contain **all files required** for a fully functional, runnable project.
-    * For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
-      - Do **not** use Markdown under any circumstances.
-      - Apply AsciiDoc syntax consistently throughout all documentation files.
-    * DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
-    </rules>
-    <instruction>
-      Create a 
-    </instruction>
-    `.trim();
+  private async openConfigFile(type: 'user' | 'base') {
+    let uri;
+    let opts: vscode.TextDocumentShowOptions = {preview: false};
+    let readonly = false;
 
-    await vscode.env.clipboard.writeText(createPrompt);
-    vscode.window.showInformationMessage('Create prompt copied to clipboard');
+    if (type == 'base') {
+      uri = vscode.Uri.file(getDefaultConfigPath(this.context));
+      readonly = true;
+    }
+
+    if (type == 'user') {
+      uri = vscode.Uri.file(getUserConfigPath(this.context));
+    }
+
+    if (!uri) {
+      return;
+    }
+
+    const doc = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(doc, opts);
+    if (readonly) {
+      await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
+    }
+  }
+
+  public async copyCreatePrompt(): Promise<void> {
+    try {
+      const userPrompt = await vscode.window.showInputBox({
+        ignoreFocusOut: true,
+        prompt: 'What do you want to create?',
+        placeHolder: 'e.g., Create a hello world in python'
+      });
+
+      if (userPrompt === undefined) {
+        // User cancelled the input
+        return;
+      }
+
+      const fullPrompt = instructionFactory.newCreateInstruction(this.context, userPrompt)
+
+      await vscode.env.clipboard.writeText(fullPrompt);
+      vscode.window.showInformationMessage('Create prompt copied to clipboard');
+    } catch (error) {
+      vscode.window.showErrorMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private async showFilePreview(filePath: string, content: string): Promise<void> {
@@ -213,9 +244,9 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
   }
 
   public async folderAsLMP(uri: string, options: { relativeTo?: string } = {}): Promise<string> {
-    const config = vscode.workspace.getConfiguration('lmpActions');
-    const configExcludePatterns = config.get<string[]>('excludePatterns') || [];
-    const configExcludeExtensions = config.get<string[]>('excludeExtensions') || [];
+    const config = readConfig(this.context);
+    const configExcludePatterns: string[] = config.lmpActions.excludePatterns || [];
+    const configExcludeExtensions: string[] = config.lmpActions.excludeExtensions || [];
     const patternRegexps = configExcludePatterns.map(pattern => new RegExp(pattern));
     return await this.lmpOperator.copyFolderAsLmp(uri, {
       excludeExtensions: configExcludeExtensions,

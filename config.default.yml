@@ -1,0 +1,112 @@
+version: 0.0.7
+lmpActions:
+  promptStructure: >
+    <lmp>
+      <rules>
+        #RULES#
+      </rules>
+      <instruction>
+        #USER_PROMPT#
+      </instruction>
+      <files>
+        #FILES#
+      </files>
+    </lmp>
+  editRules: >
+    Follow these instructions **exactly and without deviation**:
+    * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
+    * Inside the LMP file:
+      - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
+      - Output must be **raw plain text only**.
+      - Use this format for each file:
+        [FILE_START: path/to/file.ext]  
+        ...file contents...  
+        [FILE_END: path/to/file.ext]
+    * The LMP file must contain **modified files** only.
+    * Always return the **complete modified file(s)** — do not include placeholders like "rest of file" or "..." and do not omit unchanged parts.
+    * Preserve the **exact directory and file structure**.
+    * Do **not** do unrequested modifications.
+    * For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
+      - Do **not** use Markdown under any circumstances.
+      - Apply AsciiDoc syntax consistently throughout all documentation files.
+    * DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
+  createRules: >
+    Follow these rules **exactly and without deviation**:
+    * Wrap the entire output in a **single fenced code block** using triple backticks (e.g., \`\`\`txt). This outer block must contain the complete contents of the LMP file.
+    * Inside the LMP file:
+      - Do **not** include any fenced code blocks (e.g., \`\`\`), markdown, or any kind of code formatting.
+      - Output must be **raw plain text only**.
+      - Use this format for each file:
+        [FILE_START: path/to/file.ext]  
+        ...file contents...  
+        [FILE_END: path/to/file.ext]
+    * The LMP file must contain **all files required** for a fully functional, runnable project.
+    * For all documentation files (e.g., README, guides, manuals), use the **AsciiDoc (.adoc)** format.  
+      - Do **not** use Markdown under any circumstances.
+      - Apply AsciiDoc syntax consistently throughout all documentation files.
+      - Do **not** create documentation unless requested.
+    * DO NO EXPLAIN NOTHING, JUST SEND THE PROJECT, PLEASE!!!
+
+  excludeExtensions:
+    [
+      ".md",
+      ".exe",
+      ".msi",
+      ".pdf",
+      ".docx",
+      ".xlsx",
+      ".zip",
+      ".bin",
+      ".dat",
+      ".dll",
+      ".so",
+      ".dylib",
+      ".jar",
+      ".class",
+      ".obj",
+      ".o",
+      ".lib",
+      ".a",
+      ".pyc",
+      ".pyd",
+      ".pyo",
+      ".wasm",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".svg",
+      ".ico",
+      ".mp3",
+      ".mp4",
+      ".wav",
+      ".db",
+      ".sqlite",
+      ".pb",
+      ".proto",
+      ".tar",
+      ".gz",
+      ".7z",
+      ".rar",
+      ".iso",
+      ".bin",
+    ]
+  excludePatterns:
+    [
+      "node_modules",
+      "\\.git",
+      "\\.svn",
+      "\\.hg",
+      "\\.idea",
+      "\\.vscode",
+      "\\.nuget/",
+      "\\.env/",
+      "__pycache__",
+      "\\.pytest_cache",
+      "\\.gradle/",
+      "\\.m2/",
+      "\\.bundle/",
+      "\\.sass-cache/",
+      "\\.DS_Store",
+      "Thumbs\\.db",
+    ]
