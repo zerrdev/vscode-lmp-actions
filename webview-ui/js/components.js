@@ -1,3 +1,83 @@
+const Header = {
+    view() {
+        return m('h3', 'LMP Actions');
+    }
+};
+
+const TabNavigation = {
+    view() {
+        return m('.tab-navigation', [
+            m('button.tab', {
+                class: appState.activeTab === 'create' ? 'active' : '',
+                onclick: () => appState.setActiveTab('create')
+            }, 'Create'),
+            m('button.tab', {
+                class: appState.activeTab === 'edit' ? 'active' : '',
+                onclick: () => appState.setActiveTab('edit')
+            }, 'Edit'),
+            m('button.tab', {
+                class: appState.activeTab === 'config' ? 'active' : '',
+                onclick: () => appState.setActiveTab('config')
+            }, 'Config')
+        ]);
+    }
+};
+
+const TabContent = {
+    view() {
+        switch (appState.activeTab) {
+            case 'create':
+                return m(CreateTab);
+            case 'edit':
+                return m(EditTab);
+            case 'config':
+                return m(ConfigTab);
+            default:
+                return m(CreateTab);
+        }
+    }
+};
+
+const CreateTab = {
+    view() {
+        return m('.tab-content', [
+            m('label', { for: 'userPrompt' }, 'Enter your prompt:'),
+            m('textarea', {
+                id: 'userPrompt',
+                placeholder: 'Describe what you want to create...',
+                value: appState.userPrompt,
+                oninput: (e) => {
+                    appState.setUserPrompt(e.target.value);
+                }
+            }),
+            m('.top-actions', [
+                m('button', {
+                    onclick: () => vscodeService.copyCreatePrompt(appState.userPrompt)
+                }, 'Copy creation prompt')
+            ])
+        ]);
+    }
+};
+
+const EditTab = {
+    view() {
+        return m('.tab-content', [
+            m(TextInput),
+            m(FileTree),
+            m(OutputDirectory),
+            m(ExtractButton)
+        ]);
+    }
+};
+
+const ConfigTab = {
+    view() {
+        return m('.tab-content', [
+            m(ConfigButtons)
+        ]);
+    }
+};
+
 const ConfigButtons = {
     view() {
         return [
@@ -6,16 +86,11 @@ const ConfigButtons = {
             }, 'Open config'),
             m('button', {
                 onclick: () => vscodeService.openUserConfig()
-            }, 'Open user config'),
-            m('.top-actions', [
-                m('button.copy-create-prompt-button', {
-                    onclick: () => vscodeService.copyCreatePrompt()
-                }, 'Copy Create Prompt')
-            ]),
-            m('.separator')
+            }, 'Open user config')
         ];
     }
 };
+
 
 
 const ExtractButton = {
@@ -28,9 +103,11 @@ const ExtractButton = {
 };
 
 
+
 const FileTree = {
     selectedFile: null,
     expandedFolders: new Set(),
+
 
     renderTreeView(node, depth = 0) {
         const entries = Object.entries(node).sort((a, b) => {
@@ -41,6 +118,7 @@ const FileTree = {
             if (!aIsFolder && bIsFolder) return 1;
             return a[0].localeCompare(b[0]);
         });
+
 
         return entries.map(([key, value]) => {
             if (value.type === 'folder') {
@@ -84,10 +162,12 @@ const FileTree = {
         });
     },
 
+
     view() {
         const files = fileParser.findCompleteFileEntries(appState.textContent);
         const tree = fileParser.buildTreeStructure(files);
         const fileCount = files.length > 0 ? `(${files.length} files)` : '(No files)';
+
 
         return [
             m('label', [
@@ -110,12 +190,6 @@ const FileTree = {
     }
 };
 
-
-const Header = {
-    view() {
-        return m('h3', 'LMP Actions');
-    }
-};
 
 
 const OutputDirectory = {
@@ -148,6 +222,7 @@ const OutputDirectory = {
     }
 };
 
+
 const TextInput = {
     view() {
         return [
@@ -163,4 +238,5 @@ const TextInput = {
         ];
     }
 };
+
 

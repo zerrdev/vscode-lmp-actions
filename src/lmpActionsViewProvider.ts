@@ -132,8 +132,7 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
           break;
         }
         case 'copyCreatePrompt': {
-          // Handle copy create prompt request
-          await this.copyCreatePrompt();
+          await this.copyCreatePrompt(data.userPrompt);
           break;
         }
         case 'openBaseConfig': {
@@ -174,14 +173,8 @@ export class LmpActionsViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  public async copyCreatePrompt(): Promise<void> {
+  public async copyCreatePrompt(userPrompt: string): Promise<void> {
     try {
-      const userPrompt = await vscode.window.showInputBox({
-        ignoreFocusOut: true,
-        prompt: 'What do you want to create?',
-        placeHolder: 'e.g., Create a hello world in python'
-      });
-
       if (userPrompt === undefined) {
         // User cancelled the input
         return;

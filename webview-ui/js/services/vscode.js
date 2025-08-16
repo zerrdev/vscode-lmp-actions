@@ -47,8 +47,8 @@ const vscodeService = {
         this.postMessage({ command: 'selectDirectory' });
     },
     
-    copyCreatePrompt() {
-        this.postMessage({ command: 'copyCreatePrompt' });
+    copyCreatePrompt(userPrompt) {
+        this.postMessage({ command: 'copyCreatePrompt', userPrompt });
     },
     
     openBaseConfig() {
